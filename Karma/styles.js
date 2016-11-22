@@ -27,7 +27,6 @@ module.exports = StyleSheet.create({
     top: 20,
     flex: 2,
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
   },
   inputs: {
     alignSelf: 'center',

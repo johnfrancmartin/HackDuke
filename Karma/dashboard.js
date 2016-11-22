@@ -26,6 +26,7 @@ import Learn from './learn';
 import Focus from './focus';
 
 var styles = require('./styles');
+var karmaCheck = require('./karmaCheck');
 
 import NavBar from './navbar';
 
@@ -33,9 +34,10 @@ class Dashboard extends Component {
 
   constructor(props) {
     super(props);
-    this.state = {currentView: 'learn'}
+    this.state = {currentView: 'focus'}
     this.menuClick = false;
     this.settingsClick = false;
+    karmaCheck.checkKarmaNaN();
   }
 
   logout() {
@@ -52,9 +54,9 @@ class Dashboard extends Component {
 
   getView(){
     var view = null;
-    if (this.state.currentView == "focus"){
+    if (this.props.currentView == "focus"){
       view = <Focus navigator={this.props.navigator} />
-    } else if (this.state.currentView == "learn"){
+    } else if (this.props.currentView == "learn"){
       view = <Learn navigator={this.props.navigator} />
     }
     return view;
@@ -62,12 +64,12 @@ class Dashboard extends Component {
 
   render() {
     var listView = this.getView();
-    var padding = 20;
+    var padding = 40;
     return (
       <View style={styles.container}>
         {!this.props.ready && <Overlay isVisible={true}><Text>Loading...</Text></Overlay>}
         <View style={{position: 'relative', zIndex: 1000}}>
-          <NavBar navigator={this.props.navigator}/>
+          <NavBar navigator={this.props.navigator} currentView={this.props.currentView}/>
         </View>
         <View style={{position: 'relative', top: -100}}>
           {this.getView()}

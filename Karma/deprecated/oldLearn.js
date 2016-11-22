@@ -29,28 +29,33 @@ import EStyleSheet from 'react-native-extended-stylesheet';
 var styles = require('./styles');
 var DOMParser = require('xmldom').DOMParser;
 var GiftedSpinner = require('react-native-gifted-spinner');
-var SourceOptions = require('./SourceOptions');
-var karmaCheck = require('./karmaCheck');
-var sourceFinder = require('./getSources');
 
-
-class Focus extends Component {
+class Learn extends Component {
 
   constructor(props) {
     super(props);
     this.state = {loaded: false, videos: [], news: [], undisplayedVideos: [], undisplayedNews: []}
   }
 
-  async componentWillMount(){
-    var sourceChoices = await sourceFinder.getSources("good");
-    var sources = []
-    for (let i = 0; i < sourceChoices.length; i++){
-      this.fetchNewsApi(SourceOptions[sourceChoices[i]]);
-    }
+  componentWillMount(){
+    var rssFeeds = [
+      // "https://www.wired.com/feed/",
+      "http://www.gq.com/style/rss",
+      "http://fivethirtyeight.com/all/feed",
+      "http://www.artnews.com/feed/",
+      "http://www.popsci.com/rss.xml",
+      "http://www.economist.com/sections/economics/rss.xml",
+    ]
+    var rssAuthors = [
+      "Wired", "GQ", "FiveThirtyEight", "Art News", "Pop Sci", "Economist"
+    ]
     var ytListIDs = [
       "PLJ8cMiYb3G5cX8x8hoIcd8NhMin3hqxzf",
       "PLwq1lYlgzlfrCEHl5bnm-24ho7o0YnLRj",
     ]
+    for (let i = 0; i < rssFeeds.length; i++){
+      this.fetchContent(rssFeeds[i], 'news', rssAuthors[i]);
+    }
     for (let i = 0; i < ytListIDs.length; i++){
       var ytURL = "https://www.youtube.com/feeds/videos.xml" +
         "?playlist_id=" + ytListIDs[i];
@@ -77,45 +82,101 @@ class Focus extends Component {
     this.setState({videos: combined});
   }
 
-  fetchNewsApi(source) {
+  parseNews(s, author) {
+    console.log('Parsing the feed...');
+    alert("log");
+    var doc = new DOMParser().parseFromString(s, 'text/xml');
+    var objs = [];
+    if (author == "Wired" || "GQ" || "Art News"){
+      objs = this.parseAtom(doc, author);
+    }
+    this.setState({news: objs});
+  }
+
+  parseAtom(doc, author){
+    var objs = [];
+    var items = doc.getElementsByTagName('item');
+    for (var i=0; i < items.length; i++) {
+      try{
+        // let author = items[i].getElementsByTagName('author')[0].textContent;
+        let headline = items[i].getElementsByTagName('title')[0].textContent;
+        let description = items[i].getElementsByTagName('description');
+        let date = items[i].getElementsByTagName('pubDate')[0].textContent;
+        let link = items[i].getElementsByTagName('link')[0].textContent;
+        // alert(description[0].textContent);
+        let parseDesc = this.parseAtomDescription(description[0].textContent, author);
+        let parseThumb = this.parseAtomThumb(items[i], author);
+        let parseDate = this.parseAtomDate(date);
+        objs.push({
+          // author: author,
+          headline: headline,
+          description: parseDesc,
+          thumbnail: parseThumb,
+          date: parseDate,
+          link: link
+        });
+      } catch (error){
+        objs.push({
+          author: "Error",
+          headline: "Error causes headline to go awry",
+          description: "Oh no, the errors are attacking",
+          thumbnail: "http://imgs.xkcd.com/comics/wisdom_of_the_ancients.png",
+          date: "Sunday Nov 20th",
+          link: "http://imgs.xkcd.com/comics/wisdom_of_the_ancients.png",
+        })
+        continue
+      }
+    }
+    return objs;
+  }
+
+  parseAtomDate(fullDate){
+    let dateRegex = /..*(?=..:)/;
+    let date = dateRegex.exec(fullDate);
+    let dateString = date[0].substring(0, date[0].length-3);
+    return dateString;
+  }
+
+  parseAtomThumb(item, author){
+    if(author == "Wired"){
+      let description = item.getElementsByTagName('description')[0].textContent;
+      let thumbRegex = /(rss_thumbnail"><img)(.*)(?= alt=")/;
+      let thum = thumbRegex.exec(description);
+      let thumb = thum[0].substring(25, thum[0].length-1);
+      return thumb;
+    } else if (author == "GQ"){
+      // let thumb = item.getElementsByTagName("media:thumbnail");
+      let thumb = "www.gq.com";
+      return thumb;
+      alert(thumb[0])
+    }
+  }
+
+  parseAtomDescription(description, author){
+    if(author == "Wired"){
+      let descRegex = /(<\/div>)(.*)(?=The post)/;
+      let desc = descRegex.exec(description);
+      let newDesc = desc[0].substring(6, desc[0].length-1);
+      return newDesc;
+    } else if (author == "GQ"){
+      return description;
+    }
+  }
+
+  function fetchNewsApi() {
     let base = "https://newsapi.org/v1/articles?source=";
-    let sort = "&sortBy=";
-    let sourceCode = source[0];
-    let method = source[1]; //top, latest, popular
-    let bridge = "&apiKey=";
     let apiKey = "cc76455c24934e7aa3cffcfbaff35112";
-    let fetchURL = base + sourceCode + sort + method + bridge + apiKey;
-    https://newsapi.org/v1/articles?source=bbc-sport&sortBy=latest&apiKey=cc76455c24934e7aa3cffcfbaff35112
-    return fetch(fetchURL)
+    let bridge = "&apiKey=";
+    let source = "techcrunch";
+    let fetchURL = base + source + bridge + apiKey;
+    return fetch('https://newsapi.org/v1/articles?source=techcrunch&apiKey=cc76455c24934e7aa3cffcfbaff35112')
       .then((response) => response.json())
       .then((responseJson) => {
-        this.combNews(responseJson, source[2]);
+        this.combNews(responseJson);
       })
       .catch((error) => {
         console.error(error);
       });
-  }
-
-  combNews(json, organization){
-    var array = json.articles;
-    var objs = [];
-    if (array != null){
-      for (i = 0; i < array.length; i++){
-        objs.push({
-          author: array[i].author,
-          source: organization,
-          headline: array[i].title,
-          description: array[i].description,
-          thumbnail: array[i].urlToImage,
-          date: array[i].publishedAt,
-          link: array[i].url
-        });
-      }
-      var combined = this.state.news.concat(objs);
-      this.setState({news: combined});
-    } else {
-      console.log(organization);
-    }
   }
 
   fetchContent(url, type, author) {
@@ -137,14 +198,14 @@ class Focus extends Component {
 
   constructVideo(video){
     return (
-      <View style = {{height: 165, width: 0.85*Dimensions.get('window').width}}>
+      <View style = {{height: 165, width: 0.8*Dimensions.get('window').width}}>
         <TouchableOpacity onPress={() => this.onPressVideo(video.id)}>
           <Image
             source={{uri: video.thumbnail}}
-            style={{height: 165, borderRadius: 3}}
+            style={{height: 165}}
             resizeMode={Image.resizeMode.cover}
           >
-            <View style = {{flex: 1, backgroundColor: 'rgba(0,0,0,.3)',borderRadius: 3}}>
+            <View style = {{flex: 1, backgroundColor: 'rgba(0,0,0,.3)'}}>
               <Text style={localStyleSheet.imageTitle}>{video.title}</Text>
             </View>
           </Image>
@@ -153,48 +214,30 @@ class Focus extends Component {
     );
   }
 
-  async onPressVideo(videoID) {
+  onPressVideo(videoID) {
     console.log('Pressed video: ', videoID);
       this.props.navigator.push({
         name: 'player',
         videoID: videoID,
         index: 3
     });
-    await this.incrementKarma('goodkarma');
-  }
-
-  async incrementKarma(){
-    // add qualifier for good/badkarma
-    try {
-      var value =  await AsyncStorage.getItem('goodkarma');
-      if (value == null){
-        value = 0;
-      } else {
-        value = parseInt(value);
-      }
-      await AsyncStorage.setItem('goodkarma', (value + 1).toString());
-
-    } catch (error) {
-      // Error saving data
-    }
   }
 
   constructArticle(article){
-    let author = article.author;
+    let organization = article.author;
     let headline = article.headline;
     let description = article.description;
     let date = article.date;
     let thumbnail = article.thumbnail;
-    let source = article.source;
     let padding = 5;
     let articleHeight = 150;
     let articleView =
       <TouchableOpacity style = {{alignSelf: 'center', alignItems: 'center',
                                 width: 0.9*Dimensions.get('window').width,
                                 height: articleHeight, backgroundColor: '#0000000'}} onPress={() => this.onPressArticle(article)}>
-        <Image source={{uri: thumbnail}} style = {{width: 0.85*Dimensions.get('window').width, height: articleHeight, borderRadius: 3,}}>
-          <View style = {{flex: 1, justifyContent:'center', borderRadius: 3, alignItems: 'center', backgroundColor: 'rgba(0,0,0,.5)'}}>
-              <Text style = {localStyleSheet.organization}>{source}</Text>
+        <Image source={{uri: thumbnail}} style = {{width: 0.8*Dimensions.get('window').width, height: articleHeight}}>
+          <View style = {{flex: 1, justifyContent:'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,.3)'}}>
+              <Text style = {localStyleSheet.organization}>{organization}</Text>
               <Text style = {localStyleSheet.headline}>{headline}</Text>
               <Text style = {localStyleSheet.description}>{description}</Text>
               <Text style = {localStyleSheet.date}>{date}</Text>
@@ -205,10 +248,9 @@ class Focus extends Component {
     return articleView;
   }
 
-  async onPressArticle(article){
+  onPressArticle(article){
     // <Text style = {localStyleSheet.description}>{thumbnail}</Text>
     // Thumbnail link here
-    await this.incrementKarma('badkarma');
   }
 
   getRows(numRows){
@@ -300,14 +342,12 @@ const localStyleSheet = EStyleSheet.create({
   },
   headline: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Helvetica',
     fontWeight: 'bold',
     backgroundColor: 'rgba(0,0,0,0)',
     textAlign: 'center',
     marginBottom: 2,
-    marginLeft: 3,
-    marginVertical: 3,
   },
   description: {
     color: 'white',
@@ -350,4 +390,4 @@ export default createContainer(params => {
     allocation: Meteor.collection('allocations').findOne({ userId: Meteor.userId() }),
     cells: Meteor.collection('cells'),
   };
-}, Focus);
+}, Learn);

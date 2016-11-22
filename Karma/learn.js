@@ -29,6 +29,8 @@ import EStyleSheet from 'react-native-extended-stylesheet';
 var styles = require('./styles');
 var DOMParser = require('xmldom').DOMParser;
 var GiftedSpinner = require('react-native-gifted-spinner');
+var SourceOptions = require('./SourceOptions');
+
 
 class Learn extends Component {
 
@@ -38,30 +40,56 @@ class Learn extends Component {
   }
 
   componentWillMount(){
-    var rssFeeds = [
-      // "https://www.wired.com/feed/",
-      "http://www.gq.com/style/rss",
-      "http://fivethirtyeight.com/all/feed",
-      "http://www.artnews.com/feed/",
-      "http://www.popsci.com/rss.xml",
-      "http://www.economist.com/sections/economics/rss.xml",
-    ]
-    var rssAuthors = [
-      "Wired", "GQ", "FiveThirtyEight", "Art News", "Pop Sci", "Economist"
-    ]
+    var sourceChoices = this.getSources();
+    var sources = []
+    for (let i = 0; i < sourceChoices.length; i++){
+      this.fetchNewsApi(SourceOptions[sourceChoices[i]]);
+    }
     var ytListIDs = [
       "PLJ8cMiYb3G5cX8x8hoIcd8NhMin3hqxzf",
       "PLwq1lYlgzlfrCEHl5bnm-24ho7o0YnLRj",
     ]
-    for (let i = 0; i < rssFeeds.length; i++){
-      this.fetchContent(rssFeeds[i], 'news', rssAuthors[i]);
-    }
     for (let i = 0; i < ytListIDs.length; i++){
       var ytURL = "https://www.youtube.com/feeds/videos.xml" +
         "?playlist_id=" + ytListIDs[i];
       this.fetchContent(ytURL, 'video', "Youtube");
     }
     this.state.loaded = true;
+  }
+
+  getSources(){
+    try {
+      var badkarma = AsyncStorage.getItem('badkarma', (value) => {
+                  JSON.parse(value)
+      });
+      if (badkarma == null){
+        badkarma = 0;
+      };
+      var goodkarma = AsyncStorage.getItem('goodkarma', (value) => {
+    JSON.parse(value) // boolean false
+});
+      if (goodkarma == null){
+        goodkarma = 0;
+      };
+      var ratio = badkarma/goodkarma;
+    } catch (error) {
+      ratio = 1;
+    }
+    var a = Object.keys(SourceOptions);
+    var good = [];
+    var bad = [];
+    for (i = 0; i < a.length; i++){
+      let key = a[i];
+      let temp = AsyncStorage.getItem(key, (value) => {
+    JSON.parse(value) // boolean false
+});
+      if (temp == null){
+        good.push(key);
+      } else {
+        bad.push(key);
+      }
+    };
+    return bad;
   }
 
   parseVideo(s) {
@@ -82,85 +110,38 @@ class Learn extends Component {
     this.setState({videos: combined});
   }
 
-  parseNews(s, author) {
-    console.log('Parsing the feed...');
-    alert("log");
-    var doc = new DOMParser().parseFromString(s, 'text/xml');
+  fetchNewsApi(source, key) {
+    let base = "https://newsapi.org/v1/articles?source=";
+    let sort = "&sortBy="
+    let method = "top" //top, latest, popular
+    let bridge = "&apiKey=";
+    let apiKey = "cc76455c24934e7aa3cffcfbaff35112";
+    let fetchURL = base + source + sort + method + bridge + apiKey;
+    return fetch(fetchURL)
+      .then((response) => response.json())
+      .then((responseJson) => {
+        this.combNews(responseJson);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+
+  combNews(json){
+    var array = json.articles;
     var objs = [];
-    if (author == "Wired" || "GQ" || "Art News"){
-      objs = this.parseAtom(doc, author);
+    for (i = 0; i < array.length; i++){
+      objs.push({
+        author: array[i].author,
+        headline: array[i].title,
+        description: array[i].description,
+        thumbnail: array[i].urlToImage,
+        date: array[i].publishedAt,
+        link: array[i].url
+      });
     }
-    this.setState({news: objs});
-  }
-
-  parseAtom(doc, author){
-    var objs = [];
-    var items = doc.getElementsByTagName('item');
-    for (var i=0; i < items.length; i++) {
-      try{
-        // let author = items[i].getElementsByTagName('author')[0].textContent;
-        let headline = items[i].getElementsByTagName('title')[0].textContent;
-        let description = items[i].getElementsByTagName('description');
-        let date = items[i].getElementsByTagName('pubDate')[0].textContent;
-        let link = items[i].getElementsByTagName('link')[0].textContent;
-        // alert(description[0].textContent);
-        let parseDesc = this.parseAtomDescription(description[0].textContent, author);
-        let parseThumb = this.parseAtomThumb(items[i], author);
-        let parseDate = this.parseAtomDate(date);
-        objs.push({
-          // author: author,
-          headline: headline,
-          description: parseDesc,
-          thumbnail: parseThumb,
-          date: parseDate,
-          link: link
-        });
-      } catch (error){
-        objs.push({
-          author: "Error",
-          headline: "Error causes headline to go awry",
-          description: "Oh no, the errors are attacking",
-          thumbnail: "http://imgs.xkcd.com/comics/wisdom_of_the_ancients.png",
-          date: "Sunday Nov 20th",
-          link: "http://imgs.xkcd.com/comics/wisdom_of_the_ancients.png",
-        })
-        continue
-      }
-    }
-    return objs;
-  }
-
-  parseAtomDate(fullDate){
-    let dateRegex = /..*(?=..:)/;
-    let date = dateRegex.exec(fullDate);
-    let dateString = date[0].substring(0, date[0].length-3);
-    return dateString;
-  }
-
-  parseAtomThumb(item, author){
-    if(author == "Wired"){
-      let description = item.getElementsByTagName('description')[0].textContent;
-      let thumbRegex = /(rss_thumbnail"><img)(.*)(?= alt=")/;
-      let thum = thumbRegex.exec(description);
-      let thumb = thum[0].substring(25, thum[0].length-1);
-      return thumb;
-    } else if (author == "GQ"){
-      // let thumb = item.getElementsByTagName("media:thumbnail");
-      let thumb = "www.gq.com";
-      return thumb;
-      alert(thumb[0])
-    }
-  }
-
-  parseAtomDescription(description, author){
-    if(author == "Wired"){
-      let descRegex = /(<\/div>)(.*)(?=The post)/;
-      let desc = descRegex.exec(description);
-      let newDesc = desc[0].substring(6, desc[0].length-1);
-      return newDesc;
-    } else if (author == "GQ"){
-      return description;
-    }
+    var combined = this.state.news.concat(objs);
+    this.setState({news: combined});
   }
 
   fetchContent(url, type, author) {
@@ -199,6 +180,17 @@ class Learn extends Component {
   }
 
   onPressVideo(videoID) {
+    try {
+      var value = AsyncStorage.getItem('goodkarma', (value) => {
+    JSON.parse(value) // boolean false
+});
+      if (value == null){
+        value = 0;
+      }
+      AsyncStorage.setItem('goodkarma',  JSON.stringify(value + 1));
+    } catch (error) {
+      // Error saving data
+    }
     console.log('Pressed video: ', videoID);
       this.props.navigator.push({
         name: 'player',
@@ -219,8 +211,8 @@ class Learn extends Component {
       <TouchableOpacity style = {{alignSelf: 'center', alignItems: 'center',
                                 width: 0.9*Dimensions.get('window').width,
                                 height: articleHeight, backgroundColor: '#0000000'}} onPress={() => this.onPressArticle(article)}>
-        <Image source={{uri: thumbnail}} style = {{width: 0.8*Dimensions.get('window').width, height: articleHeight}}>
-          <View style = {{flex: 1, justifyContent:'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,.3)'}}>
+        <Image source={{uri: thumbnail}} style = {{width: 0.85*Dimensions.get('window').width, height: articleHeight}}>
+          <View style = {{flex: 1, justifyContent:'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,.5)'}}>
               <Text style = {localStyleSheet.organization}>{organization}</Text>
               <Text style = {localStyleSheet.headline}>{headline}</Text>
               <Text style = {localStyleSheet.description}>{description}</Text>
@@ -235,6 +227,17 @@ class Learn extends Component {
   onPressArticle(article){
     // <Text style = {localStyleSheet.description}>{thumbnail}</Text>
     // Thumbnail link here
+    try {
+      var value = AsyncStorage.getItem('goodkarma', (value) => {
+    JSON.parse(value) // boolean false
+});
+      if (value == null){
+        value = 0;
+      }
+      AsyncStorage.setItem('goodkarma', JSON.stringify(value + 1));
+    } catch (error) {
+      // Error saving data
+    }
   }
 
   getRows(numRows){

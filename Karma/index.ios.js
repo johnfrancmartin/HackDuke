@@ -34,7 +34,6 @@ var styles = require('./styles');
 
 import VideoListView from './VideoListView';
 import PlayerView from './PlayerView';
-import NewItems from './NewsItems';
 
 Meteor.connect("ws://app.mymoneycomb.com/websocket");
 var GiftedSpinner = require('react-native-gifted-spinner');
@@ -69,7 +68,7 @@ class Login extends Component {
           AsyncStorage.setItem('user', 'true');
           AsyncStorage.setItem('username', this.state.username);
           AsyncStorage.setItem('password', this.state.password)
-            .then(() => this.props.navigator.replace({ title: "Dashboard", index: 1 }));
+            .then(() => this.props.navigator.replace({ title: "Dashboard", index: 1, currentView: 'focus' }));
         }
       });
     }
@@ -139,7 +138,7 @@ class Karma extends Component {
       case 0:
         return <Login navigator={nav} />
       case 1:
-        return <Dashboard navigator={nav} />
+        return <Dashboard navigator={nav} currentView={route.currentView} />
       case 2:
         return <VideoListView navigator={nav}
                 playlistID="PLF76F25F55798FDBC" />
@@ -163,7 +162,7 @@ class Karma extends Component {
                 });
               } else {
                 this.setState({
-                  initialRoute: { title: "Dashboard", index: 1 }
+                  initialRoute: {title: "Dashboard", index: 1, currentView: 'focus'}
                 });
               }
             })

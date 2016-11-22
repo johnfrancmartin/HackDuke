@@ -9,6 +9,7 @@
   "dependencies": {
     "react": "15.3.2",
     "react-native": "0.37.0",
+    "react-native-checkbox": "^1.0.15",
     "react-native-extended-stylesheet": "^0.3.0",
     "react-native-form": "^2.1.1",
     "react-native-meteor": "^1.0.2",
