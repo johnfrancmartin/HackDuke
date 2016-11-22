@@ -30,6 +30,8 @@ var styles = require('./styles');
 var DOMParser = require('xmldom').DOMParser;
 var GiftedSpinner = require('react-native-gifted-spinner');
 var SourceOptions = require('./SourceOptions');
+var karmaCheck = require('./karmaCheck');
+var sourceFinder = require('./getSources');
 
 
 class Learn extends Component {
@@ -39,8 +41,8 @@ class Learn extends Component {
     this.state = {loaded: false, videos: [], news: [], undisplayedVideos: [], undisplayedNews: []}
   }
 
-  componentWillMount(){
-    var sourceChoices = this.getSources();
+  async componentWillMount(){
+    var sourceChoices = await sourceFinder.getSources("bad");
     var sources = []
     for (let i = 0; i < sourceChoices.length; i++){
       this.fetchNewsApi(SourceOptions[sourceChoices[i]]);
@@ -55,41 +57,6 @@ class Learn extends Component {
       this.fetchContent(ytURL, 'video', "Youtube");
     }
     this.state.loaded = true;
-  }
-
-  getSources(){
-    try {
-      var badkarma = AsyncStorage.getItem('badkarma', (value) => {
-                  JSON.parse(value)
-      });
-      if (badkarma == null){
-        badkarma = 0;
-      };
-      var goodkarma = AsyncStorage.getItem('goodkarma', (value) => {
-    JSON.parse(value) // boolean false
-});
-      if (goodkarma == null){
-        goodkarma = 0;
-      };
-      var ratio = badkarma/goodkarma;
-    } catch (error) {
-      ratio = 1;
-    }
-    var a = Object.keys(SourceOptions);
-    var good = [];
-    var bad = [];
-    for (i = 0; i < a.length; i++){
-      let key = a[i];
-      let temp = AsyncStorage.getItem(key, (value) => {
-    JSON.parse(value) // boolean false
-});
-      if (temp == null){
-        good.push(key);
-      } else {
-        bad.push(key);
-      }
-    };
-    return bad;
   }
 
   parseVideo(s) {
@@ -110,38 +77,45 @@ class Learn extends Component {
     this.setState({videos: combined});
   }
 
-  fetchNewsApi(source, key) {
+  fetchNewsApi(source) {
     let base = "https://newsapi.org/v1/articles?source=";
-    let sort = "&sortBy="
-    let method = "top" //top, latest, popular
+    let sort = "&sortBy=";
+    let sourceCode = source[0];
+    let method = source[1]; //top, latest, popular
     let bridge = "&apiKey=";
     let apiKey = "cc76455c24934e7aa3cffcfbaff35112";
-    let fetchURL = base + source + sort + method + bridge + apiKey;
+    let fetchURL = base + sourceCode + sort + method + bridge + apiKey;
+    https://newsapi.org/v1/articles?source=bbc-sport&sortBy=latest&apiKey=cc76455c24934e7aa3cffcfbaff35112
     return fetch(fetchURL)
       .then((response) => response.json())
       .then((responseJson) => {
-        this.combNews(responseJson);
+        this.combNews(responseJson, source[2]);
       })
       .catch((error) => {
         console.error(error);
       });
   }
 
-  combNews(json){
+  combNews(json, organization){
     var array = json.articles;
     var objs = [];
-    for (i = 0; i < array.length; i++){
-      objs.push({
-        author: array[i].author,
-        headline: array[i].title,
-        description: array[i].description,
-        thumbnail: array[i].urlToImage,
-        date: array[i].publishedAt,
-        link: array[i].url
-      });
+    if (array != null){
+      for (i = 0; i < array.length; i++){
+        objs.push({
+          author: array[i].author,
+          source: organization,
+          headline: array[i].title,
+          description: array[i].description,
+          thumbnail: array[i].urlToImage,
+          date: array[i].publishedAt,
+          link: array[i].url
+        });
+      }
+      var combined = this.state.news.concat(objs);
+      this.setState({news: combined});
+    } else {
+      console.log(organization);
     }
-    var combined = this.state.news.concat(objs);
-    this.setState({news: combined});
   }
 
   fetchContent(url, type, author) {
@@ -163,14 +137,14 @@ class Learn extends Component {
 
   constructVideo(video){
     return (
-      <View style = {{height: 165, width: 0.8*Dimensions.get('window').width}}>
+      <View style = {{height: 165, width: 0.85*Dimensions.get('window').width}}>
         <TouchableOpacity onPress={() => this.onPressVideo(video.id)}>
           <Image
             source={{uri: video.thumbnail}}
-            style={{height: 165}}
+            style={{height: 165, borderRadius: 3}}
             resizeMode={Image.resizeMode.cover}
           >
-            <View style = {{flex: 1, backgroundColor: 'rgba(0,0,0,.3)'}}>
+            <View style = {{flex: 1, backgroundColor: 'rgba(0,0,0,.3)',borderRadius: 3}}>
               <Text style={localStyleSheet.imageTitle}>{video.title}</Text>
             </View>
           </Image>
@@ -179,41 +153,48 @@ class Learn extends Component {
     );
   }
 
-  onPressVideo(videoID) {
-    try {
-      var value = AsyncStorage.getItem('goodkarma', (value) => {
-    JSON.parse(value) // boolean false
-});
-      if (value == null){
-        value = 0;
-      }
-      AsyncStorage.setItem('goodkarma',  JSON.stringify(value + 1));
-    } catch (error) {
-      // Error saving data
-    }
+  async onPressVideo(videoID) {
     console.log('Pressed video: ', videoID);
       this.props.navigator.push({
         name: 'player',
         videoID: videoID,
         index: 3
     });
+    await this.incrementKarma('goodkarma');
+  }
+
+  async incrementKarma(){
+    // add qualifier for good/badkarma
+    try {
+      var value =  await AsyncStorage.getItem('goodkarma');
+      if (value == null){
+        value = 0;
+      } else {
+        value = parseInt(value);
+      }
+      await AsyncStorage.setItem('goodkarma', (value + 1).toString());
+
+    } catch (error) {
+      // Error saving data
+    }
   }
 
   constructArticle(article){
-    let organization = article.author;
+    let author = article.author;
     let headline = article.headline;
     let description = article.description;
     let date = article.date;
     let thumbnail = article.thumbnail;
+    let source = article.source;
     let padding = 5;
     let articleHeight = 150;
     let articleView =
       <TouchableOpacity style = {{alignSelf: 'center', alignItems: 'center',
                                 width: 0.9*Dimensions.get('window').width,
                                 height: articleHeight, backgroundColor: '#0000000'}} onPress={() => this.onPressArticle(article)}>
-        <Image source={{uri: thumbnail}} style = {{width: 0.85*Dimensions.get('window').width, height: articleHeight}}>
-          <View style = {{flex: 1, justifyContent:'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,.5)'}}>
-              <Text style = {localStyleSheet.organization}>{organization}</Text>
+        <Image source={{uri: thumbnail}} style = {{width: 0.85*Dimensions.get('window').width, height: articleHeight, borderRadius: 3,}}>
+          <View style = {{flex: 1, justifyContent:'center', borderRadius: 3, alignItems: 'center', backgroundColor: 'rgba(0,0,0,.5)'}}>
+              <Text style = {localStyleSheet.organization}>{source}</Text>
               <Text style = {localStyleSheet.headline}>{headline}</Text>
               <Text style = {localStyleSheet.description}>{description}</Text>
               <Text style = {localStyleSheet.date}>{date}</Text>
@@ -224,20 +205,10 @@ class Learn extends Component {
     return articleView;
   }
 
-  onPressArticle(article){
+  async onPressArticle(article){
     // <Text style = {localStyleSheet.description}>{thumbnail}</Text>
     // Thumbnail link here
-    try {
-      var value = AsyncStorage.getItem('goodkarma', (value) => {
-    JSON.parse(value) // boolean false
-});
-      if (value == null){
-        value = 0;
-      }
-      AsyncStorage.setItem('goodkarma', JSON.stringify(value + 1));
-    } catch (error) {
-      // Error saving data
-    }
+    await this.incrementKarma('badkarma');
   }
 
   getRows(numRows){
@@ -329,12 +300,14 @@ const localStyleSheet = EStyleSheet.create({
   },
   headline: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Helvetica',
     fontWeight: 'bold',
     backgroundColor: 'rgba(0,0,0,0)',
     textAlign: 'center',
     marginBottom: 2,
+    marginLeft: 3,
+    marginVertical: 3,
   },
   description: {
     color: 'white',

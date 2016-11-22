@@ -138,15 +138,15 @@ class Karma extends Component {
       case 0:
         return <Login navigator={nav} />
       case 1:
-        return <Dashboard navigator={nav} currentView={route.currentView} />
+        return <Dashboard navigator={nav} currentView={route.currentView} dashboard={route.dashboard}/>
       case 2:
         return <VideoListView navigator={nav}
                 playlistID="PLF76F25F55798FDBC" />
       case 3:
         return <PlayerView navigator={nav}
                 videoID={route.videoID} />
-      case 4:
-        return <NewItems navigator={nav} title={route.title} />
+      // case 4:
+      //   return <ArticleView navigator={nav} title={route.title} />
     }
   }
 

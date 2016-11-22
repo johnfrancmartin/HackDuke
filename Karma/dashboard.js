@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {
   AppRegistry,
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
@@ -34,7 +35,8 @@ class Dashboard extends Component {
 
   constructor(props) {
     super(props);
-    this.state = {currentView: 'focus'}
+    this.state = {currentView: 'focus', loaded: false}
+    this.loaded = false;
     this.menuClick = false;
     this.settingsClick = false;
     karmaCheck.checkKarmaNaN();
@@ -54,10 +56,13 @@ class Dashboard extends Component {
 
   getView(){
     var view = null;
-    if (this.props.currentView == "focus"){
-      view = <Focus navigator={this.props.navigator} />
-    } else if (this.props.currentView == "learn"){
-      view = <Learn navigator={this.props.navigator} />
+    if (this.state.currentView == "focus"){
+      view = <Focus navigator={this.state.navigator} />
+    } else if (this.state.currentView == "learn"){
+      view = <Learn navigator={this.state.navigator} />
+    }
+    if (!this.state.loaded){
+      this.setState({loaded:true})
     }
     return view;
   }
@@ -65,19 +70,32 @@ class Dashboard extends Component {
   render() {
     var listView = this.getView();
     var padding = 40;
-    return (
-      <View style={styles.container}>
-        {!this.props.ready && <Overlay isVisible={true}><Text>Loading...</Text></Overlay>}
-        <View style={{position: 'relative', zIndex: 1000}}>
-          <NavBar navigator={this.props.navigator} currentView={this.props.currentView}/>
-        </View>
-        <View style={{position: 'relative', top: -100}}>
-          {this.getView()}
-        </View>
-        <View style={{height:35}}/>
-        <Text onPress={() => this.logout()} > Log Out </Text>
-      </View>
-    );
+      if(this.state.loaded){
+        return (
+          <View style={styles.container}>
+            {!this.props.ready && <Overlay isVisible={true}><Text>Loading...</Text></Overlay>}
+            <View style={{position: 'relative', zIndex: 1000}}>
+              <NavBar navigator={this.props.navigator} currentView={this.props.currentView} dashboard={this}/>
+            </View>
+            <View style={{position: 'relative', top: -100}}>
+              {listView}
+            </View>
+            <View style={{height:35}}/>
+            <Text onPress={() => this.logout()} > Log Out </Text>
+          </View>
+        );
+      }
+      else {
+        return(
+          <View style={styles.container}><View style={{height: 200}} />
+              <ActivityIndicator
+                animating={this.state.animating}
+                style={[styles.centering, {height: 80}]}
+                size="large"
+              />
+          </View>
+        );
+      }
   }
 
 }

@@ -18,7 +18,6 @@ module.exports = {
 
   async getRatio(){
     var ratio = 1;
-    alert("hi");
     try {
       let badkarma = await AsyncStorage.getItem('badkarma');
       if (badkarma == null){

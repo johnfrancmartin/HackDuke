@@ -34,11 +34,11 @@ class NavBar extends Component {
 
   focusView(){
     // this.props.navigator.push({title: "video", index: 2});
-    this.props.navigator.push({title: "Focus", index: 1, currentView: 'focus'});
+    this.props.dashboard.setState({currentView: "focus", loaded: false})
   }
 
   learnView(){
-    this.props.navigator.push({title: "Learn", index: 1, currentView: 'learn'});
+    this.props.dashboard.setState({currentView: "learn", loaded: false})
   }
 
   guru(){
