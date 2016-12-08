@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "Karma.app"
-               BlueprintName = "Karma"
-               ReferencedContainer = "container:Karma.xcodeproj">
+               BuildableName = "Enso.app"
+               BlueprintName = "Enso"
+               ReferencedContainer = "container:Enso.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,27 +29,27 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "KarmaTests.xctest"
-               BlueprintName = "KarmaTests"
-               ReferencedContainer = "container:Karma.xcodeproj">
+               BuildableName = "EnsoTests.xctest"
+               BlueprintName = "EnsoTests"
+               ReferencedContainer = "container:Enso.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      buildConfiguration = "Debug">
       <Testables>
          <TestableReference
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "KarmaTests.xctest"
-               BlueprintName = "KarmaTests"
-               ReferencedContainer = "container:Karma.xcodeproj">
+               BuildableName = "EnsoTests.xctest"
+               BlueprintName = "EnsoTests"
+               ReferencedContainer = "container:Enso.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -57,58 +57,48 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Karma.app"
-            BlueprintName = "Karma"
-            ReferencedContainer = "container:Karma.xcodeproj">
+            BuildableName = "Enso.app"
+            BlueprintName = "Enso"
+            ReferencedContainer = "container:Enso.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <AdditionalOptions>
-      </AdditionalOptions>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
+      buildConfiguration = "Debug"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
-      debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Karma.app"
-            BlueprintName = "Karma"
-            ReferencedContainer = "container:Karma.xcodeproj">
+            BuildableName = "Enso.app"
+            BlueprintName = "Enso"
+            ReferencedContainer = "container:Enso.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "OS_ACTIVITY_MODE"
-            value = "disable"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
-      buildConfiguration = "Release"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
+      buildConfiguration = "Release"
       debugDocumentVersioning = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Karma.app"
-            BlueprintName = "Karma"
-            ReferencedContainer = "container:Karma.xcodeproj">
+            BuildableName = "Enso.app"
+            BlueprintName = "Enso"
+            ReferencedContainer = "container:Enso.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

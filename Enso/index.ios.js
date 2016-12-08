@@ -129,7 +129,7 @@ class Login extends Component {
   }
 }
 
-class Karma extends Component {
+class Enso extends Component {
 
   constructor(props) {
     super(props);
@@ -244,4 +244,4 @@ const styles = StyleSheet.create({
   },
 });
 
-AppRegistry.registerComponent('Karma', () => Karma);
+AppRegistry.registerComponent('Enso', () => Enso);

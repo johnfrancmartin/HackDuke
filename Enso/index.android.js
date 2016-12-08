@@ -12,7 +12,7 @@ import {
   View
 } from 'react-native';
 
-export default class Karma extends Component {
+export default class Enso extends Component {
   render() {
     return (
       <View style={styles.container}>
@@ -50,4 +50,4 @@ const styles = StyleSheet.create({
   },
 });
 
-AppRegistry.registerComponent('Karma', () => Karma);
+AppRegistry.registerComponent('Enso', () => Enso);
